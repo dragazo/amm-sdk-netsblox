@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use alloc::collections::BTreeSet;
 use alloc::string::{String, ToString};
 
-use amm::{Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType};
+use amm::{Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType};
 
 mod util;
 use util::*;
@@ -83,11 +83,27 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
         return Err(TranslateError::CyclicStructure);
     }
 
+    let mut repetitions = 1;
+    for modification in section.iter_modifications() {
+        match modification.borrow().get_modification() {
+            SectionModificationType::Repeat { num_times } => repetitions += *num_times as usize,
+            _ => (),
+        }
+    }
+
+    if repetitions != 1 {
+        write!(output, r#"<block s="doRepeat"><l>{repetitions}</l><script>"#).unwrap();
+    }
+
     for content in section.iter() {
         match content {
             SectionContent::Staff(staff) => translate_staff(&*staff.borrow(), output, context)?,
             SectionContent::Section(section) => translate_section(&*section.borrow(), output, context)?,
         }
+    }
+
+    if repetitions != 1 {
+        write!(output, r#"</script></block>"#).unwrap();
     }
 
     assert!(context.sections.remove(&(section as *const _)));
@@ -103,7 +119,7 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
     write!(output, r#"<sprite name="{name}" x="0" y="0" heading="90" scale="1" volume="100" pan="0" rotation="1" draggable="true" costume="0" color="80,80,80,1" pen="tip"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><blocks></blocks><variables></variables><scripts>"#).unwrap();
 
     for (i, content) in part.iter().enumerate() {
-        let (x, y) = (0.0, i as f64 * 100.0);
+        let (x, y) = (i as f64 * 300.0, 0.0);
         write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block>"#).unwrap();
 
         match content {
