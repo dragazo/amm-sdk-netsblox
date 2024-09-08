@@ -12,7 +12,7 @@ use alloc::string::{String, ToString};
 
 use amm::{
     Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
-    NoteModificationType, Dynamic, DynamicMarking,
+    NoteModificationType, Dynamic, DynamicMarking, Phrase, PhraseContent, PhraseModificationType,
 };
 
 fn xml_escape(input: &str) -> String {
@@ -34,6 +34,7 @@ fn xml_escape(input: &str) -> String {
 pub enum TranslateError {
     CyclicStructure,
     UnsupportedDuration { duration: String }, // actual Duration isn't Debug
+    UnsupportedTuplet { num_beats: u8, into_beats: u8 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -68,6 +69,7 @@ struct Context {
     modifiers: Modifiers,
     sections: BTreeSet<*const Section>,
     staffs: BTreeSet<*const Staff>,
+    phrases: BTreeSet<*const Phrase>,
 }
 
 fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
@@ -111,6 +113,42 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
 
     Ok(())
 }
+fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
+    if !context.phrases.insert(phrase as *const _) {
+        return Err(TranslateError::CyclicStructure);
+    }
+
+    let mut tuplet_mod = None;
+    for modification in phrase.iter_modifications() {
+        match modification.borrow().get_modification() {
+            &PhraseModificationType::Tuplet { num_beats, into_beats } => match (num_beats, into_beats) {
+                (3, 2) => tuplet_mod = Some("Triplet"),
+                _ => return Err(TranslateError::UnsupportedTuplet { num_beats, into_beats }),
+            }
+            _ => (),
+        }
+    }
+
+    if let Some(tuplet_mod) = tuplet_mod {
+        write!(output, r#"<block s="noteModifierC"><l>{tuplet_mod}</l><script>"#).unwrap();
+    }
+
+    for content in phrase.iter() {
+        match content {
+            PhraseContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
+            PhraseContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
+            PhraseContent::Phrase(sub_phrase) => translate_phrase(&*sub_phrase.borrow(), output, context)?,
+            PhraseContent::MultiVoice(_) => (),
+        }
+    }
+
+    if tuplet_mod.is_some() {
+        write!(output, r#"</script></block>"#).unwrap();
+    }
+
+    assert!(context.phrases.remove(&(phrase as *const _)));
+    Ok(())
+}
 fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     if !context.staffs.insert(staff as *const _) {
         return Err(TranslateError::CyclicStructure);
@@ -120,7 +158,7 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
         match content {
             StaffContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
             StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
-            StaffContent::Phrase(_) => (),
+            StaffContent::Phrase(phrase) => translate_phrase(&*phrase.borrow(), output, context)?,
             StaffContent::Direction(_) => (),
             StaffContent::MultiVoice(_) => (),
         }

@@ -1,4 +1,4 @@
-use amm::{Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking};
+use amm::{Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking, PhraseModificationType};
 
 use amm_sdk_netsblox::*;
 
@@ -130,6 +130,46 @@ fn test_note_mods() {
     };
 
     assert_eq!(translate(&composition).unwrap(), include_str!("projects/note-mods.xml"));
+}
+
+#[test]
+fn test_triplets() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let mut section = section.borrow_mut();
+        let staff = section.add_staff("staff0", None, None, None);
+        let mut staff = staff.borrow_mut();
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
+
+        let phrase = staff.add_phrase();
+        phrase.borrow_mut().add_modification(PhraseModificationType::Tuplet { num_beats: 3, into_beats: 2 });
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
+        let chord = phrase.borrow_mut().add_chord();
+        chord.borrow_mut().add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        chord.borrow_mut().add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Quarter, 0), None);
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
+
+        let phrase = staff.add_phrase();
+        phrase.borrow_mut().add_modification(PhraseModificationType::Tuplet { num_beats: 3, into_beats: 2 });
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        let phrase = staff.add_phrase();
+        phrase.borrow_mut().add_modification(PhraseModificationType::Tuplet { num_beats: 3, into_beats: 2 });
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::F, 4), Duration::new(DurationType::Quarter, 0), None);
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
+        phrase.borrow_mut().add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
+
+        composition
+    };
+
+    assert_eq!(translate(&composition).unwrap(), include_str!("projects/triplets.xml"));
 }
 
 #[test]
