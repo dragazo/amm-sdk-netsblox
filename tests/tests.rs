@@ -1,4 +1,4 @@
-use amm::{Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType};
+use amm::{Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking};
 
 use amm_sdk_netsblox::*;
 
@@ -73,6 +73,63 @@ fn test_chords() {
     };
 
     assert_eq!(translate(&composition).unwrap(), include_str!("projects/chords.xml"));
+}
+
+#[test]
+fn test_note_mods() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let mut section = section.borrow_mut();
+        let staff = section.add_staff("staff0", None, None, None);
+        let mut staff = staff.borrow_mut();
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
+
+        let note = staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
+
+        let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
+
+        let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
+
+        let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+
+        let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+
+        let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Staccato);
+
+        let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Staccato);
+
+        let note = staff.add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+
+        let note = staff.add_note(Pitch::new(PitchName::G, 4), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+
+        composition
+    };
+
+    assert_eq!(translate(&composition).unwrap(), include_str!("projects/note-mods.xml"));
 }
 
 #[test]

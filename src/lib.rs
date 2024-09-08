@@ -10,10 +10,25 @@ use alloc::vec::Vec;
 use alloc::collections::BTreeSet;
 use alloc::string::{String, ToString};
 
-use amm::{Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType};
+use amm::{
+    Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
+    NoteModificationType, Dynamic, DynamicMarking,
+};
 
-mod util;
-use util::*;
+fn xml_escape(input: &str) -> String {
+    let mut result = String::with_capacity(input.len());
+    for c in input.chars() {
+        match c {
+            '&' => result.push_str("&amp;"),
+            '<' => result.push_str("&lt;"),
+            '>' => result.push_str("&gt;"),
+            '\'' => result.push_str("&apos;"),
+            '"' => result.push_str("&quot;"),
+            o => result.push(o),
+        }
+    }
+    result.into()
+}
 
 #[derive(Debug)]
 pub enum TranslateError {
@@ -21,14 +36,41 @@ pub enum TranslateError {
     UnsupportedDuration { duration: String }, // actual Duration isn't Debug
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Mod {
+    Piano, Forte, Accent, Staccato,
+}
+#[derive(Default)]
+struct Modifiers {
+    stack: Vec<Mod>,
+    active: BTreeSet<Mod>,
+}
+impl Modifiers {
+    fn set(&mut self, new_active: &BTreeSet<Mod>, output: &mut String) {
+        debug_assert!(self.stack.len() == self.active.len() && self.stack.iter().copied().collect::<BTreeSet<_>>() == self.active);
+
+        while !self.active.is_subset(&new_active) {
+            self.active.remove(&self.stack.pop().unwrap());
+            write!(output, r#"</script></block>"#).unwrap();
+        }
+
+        for &new in new_active {
+            if self.active.insert(new) {
+                self.stack.push(new);
+                write!(output, r#"<block s="noteModifierC"><l>{new:?}</l><script>"#).unwrap();
+            }
+        }
+    }
+}
+
 #[derive(Default)]
 struct Context {
+    modifiers: Modifiers,
     sections: BTreeSet<*const Section>,
-    parts: BTreeSet<*const Part>,
     staffs: BTreeSet<*const Staff>,
 }
 
-fn translate_chord(notes: &[Note], output: &mut String) -> Result<(), TranslateError> {
+fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     let duration = match notes.iter().map(|t| t.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
         Some(x) => x,
         None => return Ok(()),
@@ -56,6 +98,15 @@ fn translate_chord(notes: &[Note], output: &mut String) -> Result<(), TranslateE
     }
     let notes_xml = if notes.len() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
 
+    let mods = notes.iter().map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
+        NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
+        NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
+        NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
+        NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
+        _ => return None,
+    })).collect::<BTreeSet<_>>()).reduce(|a, b| &a | &b).unwrap();
+    context.modifiers.set(&mods, output);
+
     write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
 
     Ok(())
@@ -67,8 +118,8 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
 
     for content in staff.iter() {
         match content {
-            StaffContent::Note(note) => translate_chord(&[note.borrow().clone()], output)?,
-            StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output)?,
+            StaffContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
+            StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
             StaffContent::Phrase(_) => (),
             StaffContent::Direction(_) => (),
             StaffContent::MultiVoice(_) => (),
@@ -110,10 +161,6 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
     Ok(())
 }
 fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
-    if !context.parts.insert(part as *const _) {
-        return Err(TranslateError::CyclicStructure);
-    }
-
     let name = xml_escape(part.get_name());
 
     write!(output, r#"<sprite name="{name}" x="0" y="0" heading="90" scale="1" volume="100" pan="0" rotation="1" draggable="true" costume="0" color="80,80,80,1" pen="tip"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><blocks></blocks><variables></variables><scripts>"#).unwrap();
@@ -122,16 +169,16 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
         let (x, y) = (i as f64 * 300.0, 0.0);
         write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block>"#).unwrap();
 
+        debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
             PartContent::Section(section) => translate_section(&*section.borrow(), output, context)?,
         }
+        context.modifiers.set(&Default::default(), output);
 
         write!(output, r#"</script>"#).unwrap();
     }
 
     write!(output, r#"</scripts></sprite>"#).unwrap();
-
-    assert!(context.parts.remove(&(part as *const _)));
     Ok(())
 }
 pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
