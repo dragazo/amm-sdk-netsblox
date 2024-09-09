@@ -201,12 +201,27 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
 }
 fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     let name = xml_escape(part.get_name());
+    let instrument = match part.get_name().to_lowercase().as_str() {
+        x if x.contains("synth") => "Synthesizer",
+        x if x.contains("bassoon") => "Bassoon",
+        x if x.contains("bass") => "Electric Bass",
+        x if x.contains("cello") => "Cello",
+        x if x.contains("guitar") => match x {
+            x if x.contains("elec") => "Electric Guitar",
+            x if x.contains("nylon") => "Nylon Guitar",
+            _ => "Acoustic Guitar",
+        }
+        x if x.contains("harp") => "Harp",
+        x if x.contains("organ") => "Pipe Organ",
+        x if x.contains("violin") => "Violin",
+        _ => "Grand Piano",
+    };
 
     write!(output, r#"<sprite name="{name}" x="0" y="0" heading="90" scale="1" volume="100" pan="0" rotation="1" draggable="true" costume="0" color="80,80,80,1" pen="tip"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><blocks></blocks><variables></variables><scripts>"#).unwrap();
 
     for (i, content) in part.iter().enumerate() {
         let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block>"#).unwrap();
+        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block>"#).unwrap();
 
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {

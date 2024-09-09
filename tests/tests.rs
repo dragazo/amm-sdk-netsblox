@@ -46,7 +46,7 @@ fn test_notes() {
 fn test_chords() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
-        let part = composition.add_part("part0");
+        let part = composition.add_part("small harping thingy");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
         let staff = section.add_staff("staff0", None, None, None);
@@ -79,7 +79,7 @@ fn test_chords() {
 fn test_note_mods() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
-        let part = composition.add_part("part0");
+        let part = composition.add_part("Electronical Guitars");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
         let staff = section.add_staff("staff0", None, None, None);
