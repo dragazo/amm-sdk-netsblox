@@ -39,7 +39,7 @@ pub enum TranslateError {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Mod {
-    Piano, Forte, Accent, Staccato,
+    Piano, Forte, Accent, Staccato, TurnUpper, TurnLower,
 }
 #[derive(Default)]
 struct Modifiers {
@@ -105,6 +105,7 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
         NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
         NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
+        NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
         _ => return None,
     })).collect::<BTreeSet<_>>()).reduce(|a, b| &a | &b).unwrap();
     context.modifiers.set(&mods, output);

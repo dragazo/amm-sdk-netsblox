@@ -100,31 +100,39 @@ fn test_note_mods() {
 
         let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
 
+        let note = staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
+
+        let note = staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        note.borrow_mut().add_modification(NoteModificationType::Turn { upper: false, delayed: false, vertical: false });
+
+        let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
+
         let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
         note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Accent);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
 
         let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Staccato);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
-        note.borrow_mut().add_modification(NoteModificationType::Accent);
         note.borrow_mut().add_modification(NoteModificationType::Staccato);
+        note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
 
         let note = staff.add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
         note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Accent);
 
         let note = staff.add_note(Pitch::new(PitchName::G, 4), Duration::new(DurationType::Quarter, 0), None);
-        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
         note.borrow_mut().add_modification(NoteModificationType::Accent);
+        note.borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Piano, 0) });
 
         composition
     };
