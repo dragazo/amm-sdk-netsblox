@@ -73,8 +73,8 @@ struct Context {
 }
 
 fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
-    let duration = match notes.iter().map(|t| t.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
-        Some(x) => x,
+    let (notes, duration) = match notes.iter().map(|t| t.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
+        Some(x) => (notes.iter().filter(|x| !x.is_rest()), x),
         None => return Ok(()),
     };
     let duration_value = match duration.value {
@@ -94,23 +94,27 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         _ => return Err(TranslateError::UnsupportedDuration { duration: duration.to_string() }),
     };
 
-    let mut raw_notes_xml = String::new();
-    for note in notes.iter() {
-        write!(raw_notes_xml, "<l>{}</l>", note.pitch).unwrap();
+    if notes.clone().next().is_some() {
+        let mut raw_notes_xml = String::new();
+        for note in notes.clone() {
+            write!(raw_notes_xml, "<l>{}</l>", note.pitch).unwrap();
+        }
+        let notes_xml = if notes.clone().count() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
+
+        let mods = notes.clone().map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
+            NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
+            NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
+            NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
+            NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
+            NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
+            _ => return None,
+        })).collect::<BTreeSet<_>>()).reduce(|a, b| &a | &b).unwrap();
+        context.modifiers.set(&mods, output);
+
+        write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
+    } else {
+        write!(output, r#"<block s="rest"><l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
     }
-    let notes_xml = if notes.len() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
-
-    let mods = notes.iter().map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
-        NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
-        NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
-        NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
-        NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
-        NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
-        _ => return None,
-    })).collect::<BTreeSet<_>>()).reduce(|a, b| &a | &b).unwrap();
-    context.modifiers.set(&mods, output);
-
-    write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
 
     Ok(())
 }
