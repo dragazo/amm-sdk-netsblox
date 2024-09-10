@@ -24,6 +24,7 @@ fn xml_escape(input: &str) -> String {
             '>' => result.push_str("&gt;"),
             '\'' => result.push_str("&apos;"),
             '"' => result.push_str("&quot;"),
+            '\n' => result.push_str("&#xD;"),
             o => result.push(o),
         }
     }
@@ -244,8 +245,20 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let title = xml_escape(composition.get_title());
     let tempo = composition.get_tempo().beats_per_minute;
 
+    let stringify_list = |x: &[String]| if !x.is_empty() { x.join(", ") } else { "N/A".into() };
+    let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key}",
+        title = composition.get_title(),
+        composers = stringify_list(composition.get_composers()),
+        lyricists = stringify_list(composition.get_lyricists()),
+        arrangers = stringify_list(composition.get_arrangers()),
+        publisher = stringify_list(composition.get_publisher().as_slice()),
+        copyright = stringify_list(composition.get_copyright().as_slice()),
+        time_signature = composition.get_starting_time_signature(),
+        key = composition.get_starting_key(),
+    ));
+
     let mut res = String::new();
-    write!(res, r#"<room name="{title}"><role name="myRole"><project name="myRole"><stage name="Stage" width="480" height="360" costume="0" color="255,255,255,1" tempo="{tempo}" threadsafe="false" penlog="false" volume="100" pan="0" lines="round" ternary="false" hyperops="true" codify="false" inheritance="false" sublistIDs="false" scheduled="false"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><variables></variables><blocks></blocks><messageTypes><messageType><name>message</name><fields><field>msg</field></fields></messageType></messageTypes><scripts></scripts><sprites>"#).unwrap();
+    write!(res, r#"<room name="{title}"><role name="myRole"><project name="myRole"><notes>{notes}</notes><stage name="Stage" width="480" height="360" costume="0" color="255,255,255,1" tempo="{tempo}" threadsafe="false" penlog="false" volume="100" pan="0" lines="round" ternary="false" hyperops="true" codify="false" inheritance="false" sublistIDs="false" scheduled="false"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><variables></variables><blocks></blocks><messageTypes><messageType><name>message</name><fields><field>msg</field></fields></messageType></messageTypes><scripts></scripts><sprites>"#).unwrap();
 
     let mut context = Context::default();
     for part in composition.iter() {

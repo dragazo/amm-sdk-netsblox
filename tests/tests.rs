@@ -1,4 +1,7 @@
-use amm::{Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking, PhraseModificationType};
+use amm::{
+    Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking,
+    PhraseModificationType, Tempo, Key, KeySignature, TimeSignature, TimeSignatureType,
+};
 
 use amm_sdk_netsblox::*;
 
@@ -6,6 +9,9 @@ use amm_sdk_netsblox::*;
 fn test_notes() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
+        composition.set_tempo(Tempo::new(Duration::new(DurationType::Quarter, 0), 87));
+        composition.set_starting_key(Key::new(KeySignature::DFlatMajor));
+        composition.set_starting_time_signature(TimeSignature::new(TimeSignatureType::CutTime));
         let part = composition.add_part("part0");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
@@ -46,6 +52,7 @@ fn test_notes() {
 fn test_chords() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
+        composition.set_copyright("Original Music Do Not Steal (2024)");
         let part = composition.add_part("small harping thingy");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
@@ -79,6 +86,7 @@ fn test_chords() {
 fn test_note_mods() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
+        composition.set_publisher("Disco Punk 2077");
         let part = composition.add_part("Electronical Guitars");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
@@ -144,6 +152,7 @@ fn test_note_mods() {
 fn test_triplets() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
+        composition.add_arranger("Glob Simpson");
         let part = composition.add_part("part0");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
@@ -184,6 +193,8 @@ fn test_triplets() {
 fn test_repeat() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
+        composition.add_lyricist("MC Unit Test");
+        composition.add_lyricist("Debbie Debs");
         let part = composition.add_part("part0");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
@@ -227,7 +238,8 @@ fn test_repeat() {
 #[test]
 fn test_rests() {
     let composition = {
-        let mut composition = Composition::new("untitled", None, None, None);
+        let mut composition = Composition::new("some title", None, None, None);
+        composition.add_composer("DJ Devin");
         let part = composition.add_part("some pipes or something");
         let section = part.add_section("sec0");
         let mut section = section.borrow_mut();
