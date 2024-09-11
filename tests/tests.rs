@@ -1,6 +1,7 @@
 use amm::{
     Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking,
-    PhraseModificationType, Tempo, Key, KeySignature, TimeSignature, TimeSignatureType, Accidental, DirectionType,
+    PhraseModificationType, Tempo, Key, KeySignature, TimeSignature, TimeSignatureType, Accidental, DirectionType, TempoSuggestion,
+    TempoMarking,
 };
 
 use amm_sdk_netsblox::*;
@@ -347,9 +348,10 @@ fn test_accidentals() {
 }
 
 #[test]
-fn test_repeat() {
+fn test_tempo() {
     let composition = {
-        let mut composition = Composition::new("untitled", None, None, None);
+        let mut composition = Composition::new("tempo", None, None, None);
+        composition.set_tempo(Tempo { base_note: Duration::new(DurationType::Eighth, 0), beats_per_minute: 54 });
         composition.add_lyricist("MC Unit Test");
         composition.add_lyricist("Debbie Debs");
         let part = composition.add_part("part0");
@@ -359,7 +361,7 @@ fn test_repeat() {
         {
             let section = section.add_section("sec1");
             let mut section = section.borrow_mut();
-            section.add_modification(SectionModificationType::Repeat { num_times: 0 });
+            section.add_modification(SectionModificationType::TempoExplicit { tempo: Tempo::new(Duration::new(DurationType::Quarter, 0), 32) });
             let staff = section.add_staff("staff0", None, None, None);
             let mut staff = staff.borrow_mut();
             staff.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Quarter, 0), None);
@@ -369,7 +371,7 @@ fn test_repeat() {
         {
             let section = section.add_section("sec2");
             let mut section = section.borrow_mut();
-            section.add_modification(SectionModificationType::Repeat { num_times: 1 });
+            section.add_modification(SectionModificationType::TempoExplicit { tempo: Tempo::new(Duration::new(DurationType::Half, 0), 40) });
             let staff = section.add_staff("staff0", None, None, None);
             let mut staff = staff.borrow_mut();
             staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
@@ -379,7 +381,27 @@ fn test_repeat() {
         {
             let section = section.add_section("sec3");
             let mut section = section.borrow_mut();
-            section.add_modification(SectionModificationType::TempoExplicit { tempo: Tempo::new(Duration::new(DurationType::Half, 0), 30) });
+            section.add_modification(SectionModificationType::TempoExplicit { tempo: Tempo::new(Duration::new(DurationType::Sixteenth, 0), 123) });
+            let staff = section.add_staff("staff0", None, None, None);
+            let mut staff = staff.borrow_mut();
+            staff.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
+            staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        }
+
+        {
+            let section = section.add_section("sec3");
+            let mut section = section.borrow_mut();
+            section.add_modification(SectionModificationType::TempoImplicit { tempo: TempoSuggestion::new(TempoMarking::Andante) });
+            let staff = section.add_staff("staff0", None, None, None);
+            let mut staff = staff.borrow_mut();
+            staff.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
+            staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        }
+
+        {
+            let section = section.add_section("sec3");
+            let mut section = section.borrow_mut();
+            section.add_modification(SectionModificationType::TempoImplicit { tempo: TempoSuggestion::new(TempoMarking::Prestissimo) });
             let staff = section.add_staff("staff0", None, None, None);
             let mut staff = staff.borrow_mut();
             staff.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
@@ -389,5 +411,5 @@ fn test_repeat() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/repeat.xml"));
+    assert_eq!(translate(&composition).unwrap(), include_str!("projects/tempo.xml"));
 }

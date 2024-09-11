@@ -197,7 +197,7 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
     for modification in section.iter_modifications() {
         match modification.borrow().get_modification() {
             SectionModificationType::Repeat { num_times } => repetitions += *num_times as usize,
-            SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = tempo..beats_per_minute).unwrap(),
+            SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(tempo)).unwrap(),
             SectionModificationType::TempoImplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = tempo.value()).unwrap(),
             _ => (),
         }
@@ -260,7 +260,7 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let composition = composition.restructure_staves_as_parts().flatten();
     let title = xml_escape(composition.get_title());
-    let tempo = composition.get_tempo().beats_per_minute;
+    let tempo = quarter_note_tempo(composition.get_tempo());
 
     let stringify_list = |x: &[String]| if !x.is_empty() { x.join(", ") } else { "N/A".into() };
     let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key}",
