@@ -13,6 +13,7 @@ use alloc::string::String;
 use amm::{
     Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
     NoteModificationType, Dynamic, DynamicMarking, Phrase, PhraseContent, PhraseModificationType, Key, Duration, DirectionType, Accidental,
+    Tempo,
 };
 
 fn xml_escape(input: &str) -> String {
@@ -29,6 +30,9 @@ fn xml_escape(input: &str) -> String {
         }
     }
     result.into()
+}
+fn quarter_note_tempo(tempo: &Tempo) -> f64 {
+    tempo.beats_per_minute as f64 * (tempo.base_note.value() / Duration::new(DurationType::Quarter, 0).value())
 }
 
 #[derive(Debug)]
@@ -193,6 +197,8 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
     for modification in section.iter_modifications() {
         match modification.borrow().get_modification() {
             SectionModificationType::Repeat { num_times } => repetitions += *num_times as usize,
+            SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = tempo..beats_per_minute).unwrap(),
+            SectionModificationType::TempoImplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = tempo.value()).unwrap(),
             _ => (),
         }
     }

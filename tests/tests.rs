@@ -345,3 +345,49 @@ fn test_accidentals() {
 
     assert_eq!(translate(&composition).unwrap(), include_str!("projects/accidentals.xml"));
 }
+
+#[test]
+fn test_repeat() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        composition.add_lyricist("MC Unit Test");
+        composition.add_lyricist("Debbie Debs");
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let mut section = section.borrow_mut();
+
+        {
+            let section = section.add_section("sec1");
+            let mut section = section.borrow_mut();
+            section.add_modification(SectionModificationType::Repeat { num_times: 0 });
+            let staff = section.add_staff("staff0", None, None, None);
+            let mut staff = staff.borrow_mut();
+            staff.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Quarter, 0), None);
+            staff.add_note(Pitch::new(PitchName::A, 1), Duration::new(DurationType::Quarter, 0), None);
+        }
+
+        {
+            let section = section.add_section("sec2");
+            let mut section = section.borrow_mut();
+            section.add_modification(SectionModificationType::Repeat { num_times: 1 });
+            let staff = section.add_staff("staff0", None, None, None);
+            let mut staff = staff.borrow_mut();
+            staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+            staff.add_note(Pitch::new(PitchName::B, 5), Duration::new(DurationType::Quarter, 0), None);
+        }
+
+        {
+            let section = section.add_section("sec3");
+            let mut section = section.borrow_mut();
+            section.add_modification(SectionModificationType::TempoExplicit { tempo: Tempo::new(Duration::new(DurationType::Half, 0), 30) });
+            let staff = section.add_staff("staff0", None, None, None);
+            let mut staff = staff.borrow_mut();
+            staff.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
+            staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+        }
+
+        composition
+    };
+
+    assert_eq!(translate(&composition).unwrap(), include_str!("projects/repeat.xml"));
+}
