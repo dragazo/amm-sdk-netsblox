@@ -1,6 +1,6 @@
 use amm::{
     Composition, Pitch, Duration, DurationType, PitchName, SectionModificationType, NoteModificationType, Dynamic, DynamicMarking,
-    PhraseModificationType, Tempo, Key, KeySignature, TimeSignature, TimeSignatureType,
+    PhraseModificationType, Tempo, Key, KeySignature, TimeSignature, TimeSignatureType, Accidental, DirectionType,
 };
 
 use amm_sdk_netsblox::*;
@@ -299,4 +299,49 @@ fn test_rests() {
     };
 
     assert_eq!(translate(&composition).unwrap(), include_str!("projects/rests.xml"));
+}
+
+#[test]
+fn test_accidentals() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let mut section = section.borrow_mut();
+        let staff = section.add_staff("staff0", None, None, None);
+        let mut staff = staff.borrow_mut();
+
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::None));
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::Natural));
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::Sharp));
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleSharp));
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::Flat));
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleFlat));
+
+        staff.add_direction(DirectionType::KeyChange { key: Key::new(KeySignature::EFlatMajor) });
+
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::None));
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::Natural));
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::Sharp));
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleSharp));
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::Flat));
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleFlat));
+
+        staff.add_direction(DirectionType::KeyChange { key: Key::new(KeySignature::GSharpMinor) });
+
+        let chord = staff.add_chord();
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), None);
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::None));
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::Natural));
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::Sharp));
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleSharp));
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::Flat));
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Quarter, 0), Some(Accidental::DoubleFlat));
+
+        composition
+    };
+
+    assert_eq!(translate(&composition).unwrap(), include_str!("projects/accidentals.xml"));
 }

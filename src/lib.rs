@@ -8,11 +8,11 @@ use core::fmt::Write as _;
 
 use alloc::vec::Vec;
 use alloc::collections::BTreeSet;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 
 use amm::{
     Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
-    NoteModificationType, Dynamic, DynamicMarking, Phrase, PhraseContent, PhraseModificationType,
+    NoteModificationType, Dynamic, DynamicMarking, Phrase, PhraseContent, PhraseModificationType, Key, Duration, DirectionType, Accidental,
 };
 
 fn xml_escape(input: &str) -> String {
@@ -34,7 +34,7 @@ fn xml_escape(input: &str) -> String {
 #[derive(Debug)]
 pub enum TranslateError {
     CyclicStructure,
-    UnsupportedDuration { duration: String }, // actual Duration isn't Debug
+    UnsupportedDuration { duration: Duration },
     UnsupportedTuplet { num_beats: u8, into_beats: u8 },
 }
 
@@ -65,12 +65,12 @@ impl Modifiers {
     }
 }
 
-#[derive(Default)]
 struct Context {
     modifiers: Modifiers,
     sections: BTreeSet<*const Section>,
     staffs: BTreeSet<*const Staff>,
     phrases: BTreeSet<*const Phrase>,
+    starting_key: Key,
 }
 
 fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
@@ -86,19 +86,27 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         DurationType::Sixteenth => "Sixteenth",
         DurationType::ThirtySecond => "ThirtySecond",
         DurationType::SixtyFourth => "SixtyFourth",
-        _ => return Err(TranslateError::UnsupportedDuration { duration: duration.to_string() }),
+        _ => return Err(TranslateError::UnsupportedDuration { duration }),
     };
     let duration_dots = match duration.dots {
         0 => "",
         1 => "Dotted",
         2 => "DottedDotted",
-        _ => return Err(TranslateError::UnsupportedDuration { duration: duration.to_string() }),
+        _ => return Err(TranslateError::UnsupportedDuration { duration }),
     };
 
     if notes.clone().next().is_some() {
         let mut raw_notes_xml = String::new();
         for note in notes.clone() {
-            write!(raw_notes_xml, "<l>{}</l>", note.pitch).unwrap();
+            let accidental = match note.accidental {
+                Accidental::None => "",
+                Accidental::Natural => "n",
+                Accidental::Sharp => "s",
+                Accidental::DoubleSharp => "ss",
+                Accidental::Flat => "b",
+                Accidental::DoubleFlat => "bb",
+            };
+            write!(raw_notes_xml, "<l>{pitch}{accidental}</l>", pitch = note.pitch).unwrap();
         }
         let notes_xml = if notes.clone().count() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
 
@@ -165,7 +173,10 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
             StaffContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
             StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
             StaffContent::Phrase(phrase) => translate_phrase(&*phrase.borrow(), output, context)?,
-            StaffContent::Direction(_) => (),
+            StaffContent::Direction(direction) => match direction.borrow().get_modification() {
+                DirectionType::KeyChange { key } => write!(output, r#"<block s="setKeySignature"><l>{key_signature:?}</l></block>"#, key_signature = key.signature).unwrap(),
+                _ => (),
+            }
             StaffContent::MultiVoice(_) => (),
         }
     }
@@ -226,7 +237,7 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 
     for (i, content) in part.iter().enumerate() {
         let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block>"#).unwrap();
+        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKeySignature"><l>{key_signature:?}</l></block>"#, key_signature = context.starting_key.signature).unwrap();
 
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
@@ -260,7 +271,7 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let mut res = String::new();
     write!(res, r#"<room name="{title}"><role name="myRole"><project name="myRole"><notes>{notes}</notes><stage name="Stage" width="480" height="360" costume="0" color="255,255,255,1" tempo="{tempo}" threadsafe="false" penlog="false" volume="100" pan="0" lines="round" ternary="false" hyperops="true" codify="false" inheritance="false" sublistIDs="false" scheduled="false"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><variables></variables><blocks></blocks><messageTypes><messageType><name>message</name><fields><field>msg</field></fields></messageType></messageTypes><scripts></scripts><sprites>"#).unwrap();
 
-    let mut context = Context::default();
+    let mut context = Context { modifiers: Modifiers::default(), sections: BTreeSet::new(), phrases: BTreeSet::new(), staffs: BTreeSet::new(), starting_key: *composition.get_starting_key() };
     for part in composition.iter() {
         translate_part(part, &mut res, &mut context)?;
     }
