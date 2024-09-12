@@ -121,14 +121,14 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         }
         let notes_xml = if notes.clone().count() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
 
-        let mods = notes.clone().map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
+        let mods = notes.clone().flat_map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
             NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
             NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
             NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
             NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
             NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
             _ => return None,
-        })).collect::<BTreeSet<_>>()).reduce(|a, b| &a | &b).unwrap();
+        }))).collect();
         context.modifiers.set(&mods, output);
 
         write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
