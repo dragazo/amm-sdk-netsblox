@@ -82,14 +82,17 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         Some(x) => (notes.iter().filter(|x| !x.is_rest()), x),
         None => return Ok(()),
     };
-    let duration_value = match duration.value {
-        DurationType::Whole => "Whole",
-        DurationType::Half => "Half",
-        DurationType::Quarter => "Quarter",
-        DurationType::Eighth => "Eighth",
-        DurationType::Sixteenth => "Sixteenth",
-        DurationType::ThirtySecond => "ThirtySecond",
-        DurationType::SixtyFourth => "SixtyFourth",
+    let (duration_value, duration_multiplier) = match duration.value {
+        DurationType::Maxima => ("Whole", 8),
+        DurationType::Long => ("Whole", 4),
+        DurationType::Breve => ("Whole", 2),
+        DurationType::Whole => ("Whole", 1),
+        DurationType::Half => ("Half", 1),
+        DurationType::Quarter => ("Quarter", 1),
+        DurationType::Eighth => ("Eighth", 1),
+        DurationType::Sixteenth => ("Sixteenth", 1),
+        DurationType::ThirtySecond => ("ThirtySecond", 1),
+        DurationType::SixtyFourth => ("SixtyFourth", 1),
         _ => return Err(TranslateError::UnsupportedDuration { duration }),
     };
     let duration_dots = match duration.dots {
@@ -98,6 +101,10 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         2 => "DottedDotted",
         _ => return Err(TranslateError::UnsupportedDuration { duration }),
     };
+
+    if duration_multiplier != 1 {
+        write!(output, r#"<block s="doRepeat"><l>{duration_multiplier}</l><script>"#).unwrap();
+    }
 
     if notes.clone().next().is_some() {
         let mut raw_notes_xml = String::new();
@@ -127,6 +134,10 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
     } else {
         write!(output, r#"<block s="rest"><l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
+    }
+
+    if duration_multiplier != 1 {
+        write!(output, r#"</script></block>"#).unwrap();
     }
 
     Ok(())
