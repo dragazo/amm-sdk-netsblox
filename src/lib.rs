@@ -26,7 +26,7 @@ fn xml_escape(input: &str) -> String {
             '\'' => result.push_str("&apos;"),
             '"' => result.push_str("&quot;"),
             '\n' => result.push_str("&#xD;"),
-            o => result.push(o),
+            _ => result.push(c),
         }
     }
     result.into()
@@ -48,24 +48,41 @@ enum Mod {
 }
 #[derive(Default)]
 struct Modifiers {
-    stack: Vec<Mod>,
+    stack: Vec<Vec<Mod>>,
     active: BTreeSet<Mod>,
 }
 impl Modifiers {
     fn set(&mut self, new_active: &BTreeSet<Mod>, output: &mut String) {
-        debug_assert!(self.stack.len() == self.active.len() && self.stack.iter().copied().collect::<BTreeSet<_>>() == self.active);
+        macro_rules! check_invariants {
+            () => {{
+                debug_assert!(self.stack.iter().all(|x| !x.is_empty()));
+                debug_assert!(self.stack.iter().map(|x| x.len()).sum::<usize>() == self.active.len());
+                debug_assert!(self.stack.iter().flat_map(|x| x.iter().copied()).collect::<BTreeSet<_>>() == self.active);
+            }};
+        }
+        check_invariants!();
 
         while !self.active.is_subset(&new_active) {
-            self.active.remove(&self.stack.pop().unwrap());
+            for x in self.stack.pop().unwrap() {
+                self.active.remove(&x);
+            }
             write!(output, r#"</script></block>"#).unwrap();
         }
 
-        for &new in new_active {
-            if self.active.insert(new) {
-                self.stack.push(new);
-                write!(output, r#"<block s="noteModifierC"><l>{new:?}</l><script>"#).unwrap();
+        let new = (new_active - &self.active).into_iter().collect::<Vec<_>>();
+
+        if !new.is_empty() {
+            write!(output, r#"<block s="noteMod"><list>"#).unwrap();
+            for x in new.iter() {
+                self.active.insert(*x);
+                write!(output, r#"<l><option>{x:?}</option></l>"#).unwrap();
             }
+            write!(output, r#"</list><script>"#).unwrap();
+
+            self.stack.push(new);
         }
+
+        check_invariants!();
     }
 }
 
@@ -77,37 +94,35 @@ struct Context {
     starting_key: Key,
 }
 
-fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
-    let (notes, duration) = match notes.iter().map(|t| t.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
-        Some(x) => (notes.iter().filter(|x| !x.is_rest()), x),
-        None => return Ok(()),
-    };
-    let (duration_value, duration_multiplier) = match duration.value {
-        DurationType::Maxima => ("Whole", 8),
-        DurationType::Long => ("Whole", 4),
-        DurationType::Breve => ("Whole", 2),
-        DurationType::Whole => ("Whole", 1),
-        DurationType::Half => ("Half", 1),
-        DurationType::Quarter => ("Quarter", 1),
-        DurationType::Eighth => ("Eighth", 1),
-        DurationType::Sixteenth => ("Sixteenth", 1),
-        DurationType::ThirtySecond => ("ThirtySecond", 1),
-        DurationType::SixtyFourth => ("SixtyFourth", 1),
-        _ => return Err(TranslateError::UnsupportedDuration { duration }),
-    };
-    let duration_dots = match duration.dots {
-        0 => "",
-        1 => "Dotted",
-        2 => "DottedDotted",
-        _ => return Err(TranslateError::UnsupportedDuration { duration }),
-    };
-
-    if duration_multiplier != 1 {
-        write!(output, r#"<block s="doRepeat"><l>{duration_multiplier}</l><script>"#).unwrap();
+fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
+    fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
+        let value = match duration.value {
+            DurationType::Whole => "Whole",
+            DurationType::Half => "Half",
+            DurationType::Quarter => "Quarter",
+            DurationType::Eighth => "Eighth",
+            DurationType::Sixteenth => "Sixteenth",
+            DurationType::ThirtySecond => "ThirtySecond",
+            DurationType::SixtyFourth => "SixtyFourth",
+            _ => return Err(TranslateError::UnsupportedDuration { duration }),
+        };
+        let dots = match duration.dots {
+            0 => "",
+            1 => "Dotted",
+            2 => "DottedDotted",
+            _ => return Err(TranslateError::UnsupportedDuration { duration }),
+        };
+        Ok(format!("<l>{dots}{value}</l>"))
     }
 
+    let (notes, shortest_duration) = match raw_notes.iter().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
+        Some(x) => (raw_notes.iter().filter(|x| !x.is_rest()), parse_duration(x)?),
+        None => return Ok(()),
+    };
+
     if notes.clone().next().is_some() {
-        let mut raw_notes_xml = String::new();
+        let mut notes_xml = String::new();
+        let mut durations_xml = vec![];
         for note in notes.clone() {
             let accidental = match note.accidental {
                 Accidental::None => "",
@@ -117,11 +132,16 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
                 Accidental::Flat => "b",
                 Accidental::DoubleFlat => "bb",
             };
-            write!(raw_notes_xml, "<l>{pitch}{accidental}</l>", pitch = note.pitch).unwrap();
+            write!(notes_xml, "<l>{pitch}{accidental}</l>", pitch = note.pitch).unwrap();
+            durations_xml.push(parse_duration(note.duration)?);
         }
-        let notes_xml = if notes.clone().count() == 1 { raw_notes_xml } else { format!(r#"<block s="reportNewList"><list>{raw_notes_xml}</list></block>"#) };
+        if !durations_xml.contains(&shortest_duration) {
+            write!(notes_xml, "<l>rest</l>").unwrap();
+            durations_xml.push(shortest_duration);
+        }
+        let durations_xml = if durations_xml.iter().all(|x| *x == durations_xml[0]) { durations_xml.into_iter().next().unwrap() } else { format!(r#"<block s="reportNewList"><list>{}</list></block>"#, durations_xml.join("")) };
 
-        let mods = notes.clone().flat_map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
+        let mods = notes.filter(|x| !x.is_rest()).flat_map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
             NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
             NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
             NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
@@ -131,13 +151,9 @@ fn translate_chord(notes: &[Note], output: &mut String, context: &mut Context) -
         }))).collect();
         context.modifiers.set(&mods, output);
 
-        write!(output, r#"<block s="playNote">{notes_xml}<l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
+        write!(output, r#"<block s="playNotes">{durations_xml}<list>{notes_xml}</list></block>"#).unwrap();
     } else {
-        write!(output, r#"<block s="rest"><l>{duration_value}</l><l>{duration_dots}</l></block>"#).unwrap();
-    }
-
-    if duration_multiplier != 1 {
-        write!(output, r#"</script></block>"#).unwrap();
+        write!(output, r#"<block s="rest">{shortest_duration}</block>"#).unwrap();
     }
 
     Ok(())
@@ -159,7 +175,7 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
     }
 
     if let Some(tuplet_mod) = tuplet_mod {
-        write!(output, r#"<block s="noteModifierC"><l>{tuplet_mod}</l><script>"#).unwrap();
+        write!(output, r#"<block s="noteMod"><list><l><option>{tuplet_mod}</option></l></list><script>"#).unwrap();
     }
 
     for content in phrase.iter() {
@@ -189,7 +205,7 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
             StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
             StaffContent::Phrase(phrase) => translate_phrase(&*phrase.borrow(), output, context)?,
             StaffContent::Direction(direction) => match direction.borrow().get_modification() {
-                DirectionType::KeyChange { key } => write!(output, r#"<block s="setKeySignature"><l>{key_signature:?}</l></block>"#, key_signature = key.signature).unwrap(),
+                DirectionType::KeyChange { key } => write!(output, r#"<block s="setKey"><l>{key_signature:?}</l></block>"#, key_signature = key.signature).unwrap(),
                 _ => (),
             }
             StaffContent::MultiVoice(_) => (),
@@ -208,8 +224,8 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
     for modification in section.iter_modifications() {
         match modification.borrow().get_modification() {
             SectionModificationType::Repeat { num_times } => repetitions += *num_times as usize,
-            SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(tempo)).unwrap(),
-            SectionModificationType::TempoImplicit { tempo } => write!(output, r#"<block s="makeTempo"><l>{tempo}</l></block>"#, tempo = tempo.value()).unwrap(),
+            SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(tempo)).unwrap(),
+            SectionModificationType::TempoImplicit { tempo } => write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = tempo.value()).unwrap(),
             _ => (),
         }
     }
@@ -254,7 +270,7 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 
     for (i, content) in part.iter().enumerate() {
         let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKeySignature"><l>{key_signature:?}</l></block>"#, key_signature = context.starting_key.signature).unwrap();
+        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKey"><l>{key_signature:?}</l></block>"#, key_signature = context.starting_key.signature).unwrap();
 
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
@@ -274,7 +290,7 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let tempo = quarter_note_tempo(composition.get_tempo());
 
     let stringify_list = |x: &[String]| if !x.is_empty() { x.join(", ") } else { "N/A".into() };
-    let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key}",
+    let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key:?}",
         title = composition.get_title(),
         composers = stringify_list(composition.get_composers()),
         lyricists = stringify_list(composition.get_lyricists()),
@@ -282,7 +298,7 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
         publisher = stringify_list(composition.get_publisher().as_slice()),
         copyright = stringify_list(composition.get_copyright().as_slice()),
         time_signature = composition.get_starting_time_signature(),
-        key = composition.get_starting_key(),
+        key = composition.get_starting_key().signature,
     ));
 
     let mut res = String::new();

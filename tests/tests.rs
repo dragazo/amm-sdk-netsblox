@@ -19,9 +19,6 @@ fn test_notes() {
         let staff = section.add_staff("staff0", None, None, None);
         let mut staff = staff.borrow_mut();
 
-        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Maxima, 0), None);
-        staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Long, 0), None);
-        staff.add_note(Pitch::new(PitchName::G, 5), Duration::new(DurationType::Breve, 0), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 0), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 0), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 0), None);
@@ -30,9 +27,6 @@ fn test_notes() {
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 0), None);
         staff.add_note(Pitch::new(PitchName::E, 1), Duration::new(DurationType::SixtyFourth, 0), None);
 
-        staff.add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Maxima, 1), None);
-        staff.add_note(Pitch::new(PitchName::F, 2), Duration::new(DurationType::Long, 1), None);
-        staff.add_note(Pitch::new(PitchName::A, 1), Duration::new(DurationType::Breve, 1), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 1), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 1), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 1), None);
@@ -41,9 +35,6 @@ fn test_notes() {
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 1), None);
         staff.add_note(Pitch::new(PitchName::E, 1), Duration::new(DurationType::SixtyFourth, 1), None);
 
-        staff.add_note(Pitch::new(PitchName::F, 1), Duration::new(DurationType::Maxima, 2), None);
-        staff.add_note(Pitch::new(PitchName::A, 2), Duration::new(DurationType::Long, 2), None);
-        staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Breve, 2), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 2), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 2), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 2), None);
@@ -55,7 +46,10 @@ fn test_notes() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/notes.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/notes.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -86,10 +80,55 @@ fn test_chords() {
         chord.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Quarter, 0), None);
         chord.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Quarter, 0), None);
 
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Eighth, 0), None);
+        chord.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Sixteenth, 1), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new(PitchName::B, 2), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Whole, 0), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new(PitchName::A, 2), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 2), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Half, 0), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new(PitchName::F, 5), Duration::new(DurationType::Half, 0), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 2), None);
+
+        let chord = staff.add_chord();
+        let mut chord = chord.borrow_mut();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 0), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 2), None);
+
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/chords.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/chords.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -155,7 +194,10 @@ fn test_note_mods() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/note-mods.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/note-mods.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -196,7 +238,10 @@ fn test_triplets() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/triplets.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/triplets.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -242,7 +287,10 @@ fn test_repeat() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/repeat.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/repeat.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -288,6 +336,12 @@ fn test_rests() {
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
+        chord.borrow_mut().add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None).borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
+        chord.borrow_mut().add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None).borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
+
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
+
+        let chord = staff.add_chord();
         chord.borrow_mut().add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None);
         chord.borrow_mut().add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Eighth, 0), None).borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
 
@@ -305,10 +359,18 @@ fn test_rests() {
         chord.borrow_mut().add_note(Pitch::new_rest(), Duration::new(DurationType::Sixteenth, 0), None).borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
         chord.borrow_mut().add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Sixteenth, 0), None);
 
+        let chord = staff.add_chord();
+        chord.borrow_mut().add_note(Pitch::new(PitchName::B, 4), Duration::new(DurationType::Sixteenth, 0), None);
+        chord.borrow_mut().add_note(Pitch::new_rest(), Duration::new(DurationType::ThirtySecond, 0), None).borrow_mut().add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::new(DynamicMarking::Forte, 0) });
+        chord.borrow_mut().add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Sixteenth, 0), None);
+
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/rests.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/rests.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -353,7 +415,10 @@ fn test_accidentals() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/accidentals.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/accidentals.xml") {
+        panic!("{trans}");
+    }
 }
 
 #[test]
@@ -420,5 +485,8 @@ fn test_tempo() {
         composition
     };
 
-    assert_eq!(translate(&composition).unwrap(), include_str!("projects/tempo.xml"));
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/tempo.xml") {
+        panic!("{trans}");
+    }
 }
