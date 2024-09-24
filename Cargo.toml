@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# amm = { git = "ssh://git@github.com/hedgetechllc/amm-sdk.git" }
-amm = { path = "../amm-sdk/amm" }
+amm = { git = "ssh://git@github.com/hedgetechllc/amm-sdk.git" }
+# amm = { path = "../amm-sdk/amm" }

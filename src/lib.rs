@@ -12,7 +12,7 @@ use alloc::string::String;
 
 use amm::{
     Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
-    NoteModificationType, Dynamic, DynamicMarking, Phrase, PhraseContent, PhraseModificationType, Key, Duration, DirectionType, Accidental,
+    NoteModificationType, Dynamic, Phrase, PhraseContent, PhraseModificationType, Key, Duration, DirectionType, Accidental,
     Tempo,
 };
 
@@ -141,11 +141,11 @@ fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Contex
         }
         let durations_xml = if durations_xml.iter().all(|x| *x == durations_xml[0]) { durations_xml.into_iter().next().unwrap() } else { format!(r#"<block s="reportNewList"><list>{}</list></block>"#, durations_xml.join("")) };
 
-        let mods = notes.filter(|x| !x.is_rest()).flat_map(|n| n.iter_modifications().flat_map(|m| Some(match m.borrow().get_modification() {
+        let mods = notes.filter(|x| !x.is_rest()).flat_map(|n| n.iter_modifications().flat_map(|m| Some(match &m.r#type {
             NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
             NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
-            NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Forte | DynamicMarking::MezzoForte, repetitions: _ } } => Mod::Forte,
-            NoteModificationType::Dynamic { dynamic: Dynamic { marking: DynamicMarking::Piano | DynamicMarking::MezzoPiano, repetitions: _ } } => Mod::Piano,
+            NoteModificationType::Dynamic { dynamic: Dynamic::Forte(_) | Dynamic::MezzoForte } => Mod::Forte,
+            NoteModificationType::Dynamic { dynamic: Dynamic::Piano(_) | Dynamic::MezzoPiano } => Mod::Piano,
             NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
             _ => return None,
         }))).collect();
@@ -165,7 +165,7 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
 
     let mut tuplet_mod = None;
     for modification in phrase.iter_modifications() {
-        match modification.borrow().get_modification() {
+        match &modification.r#type {
             &PhraseModificationType::Tuplet { num_beats, into_beats } => match (num_beats, into_beats) {
                 (3, 2) => tuplet_mod = Some("Triplet"),
                 _ => return Err(TranslateError::UnsupportedTuplet { num_beats, into_beats }),
@@ -180,9 +180,9 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
 
     for content in phrase.iter() {
         match content {
-            PhraseContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
-            PhraseContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
-            PhraseContent::Phrase(sub_phrase) => translate_phrase(&*sub_phrase.borrow(), output, context)?,
+            PhraseContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
+            PhraseContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
+            PhraseContent::Phrase(sub_phrase) => translate_phrase(&*sub_phrase, output, context)?,
             PhraseContent::MultiVoice(_) => (),
         }
     }
@@ -201,11 +201,11 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
 
     for content in staff.iter() {
         match content {
-            StaffContent::Note(note) => translate_chord(&[note.borrow().clone()], output, context)?,
-            StaffContent::Chord(chord) => translate_chord(&chord.borrow().iter().map(|x| match x { ChordContent::Note(note) => note.borrow().clone() }).collect::<Vec<_>>(), output, context)?,
-            StaffContent::Phrase(phrase) => translate_phrase(&*phrase.borrow(), output, context)?,
-            StaffContent::Direction(direction) => match direction.borrow().get_modification() {
-                DirectionType::KeyChange { key } => write!(output, r#"<block s="setKey"><l>{key_signature:?}</l></block>"#, key_signature = key.signature).unwrap(),
+            StaffContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
+            StaffContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
+            StaffContent::Phrase(phrase) => translate_phrase(&*phrase, output, context)?,
+            StaffContent::Direction(direction) => match &direction.r#type {
+                DirectionType::KeyChange { key } => write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = key.signature, key_mode = key.mode).unwrap(),
                 _ => (),
             }
             StaffContent::MultiVoice(_) => (),
@@ -222,7 +222,7 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
 
     let mut repetitions = 1;
     for modification in section.iter_modifications() {
-        match modification.borrow().get_modification() {
+        match &modification.r#type {
             SectionModificationType::Repeat { num_times } => repetitions += *num_times as usize,
             SectionModificationType::TempoExplicit { tempo } => write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(tempo)).unwrap(),
             SectionModificationType::TempoImplicit { tempo } => write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = tempo.value()).unwrap(),
@@ -236,8 +236,8 @@ fn translate_section(section: &Section, output: &mut String, context: &mut Conte
 
     for content in section.iter() {
         match content {
-            SectionContent::Staff(staff) => translate_staff(&*staff.borrow(), output, context)?,
-            SectionContent::Section(section) => translate_section(&*section.borrow(), output, context)?,
+            SectionContent::Staff(staff) => translate_staff(staff, output, context)?,
+            SectionContent::Section(section) => translate_section(section, output, context)?,
         }
     }
 
@@ -270,11 +270,11 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 
     for (i, content) in part.iter().enumerate() {
         let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKey"><l>{key_signature:?}</l></block>"#, key_signature = context.starting_key.signature).unwrap();
+        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = context.starting_key.signature, key_mode = context.starting_key.mode).unwrap();
 
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
-            PartContent::Section(section) => translate_section(&*section.borrow(), output, context)?,
+            PartContent::Section(section) => translate_section(section, output, context)?,
         }
         context.modifiers.set(&Default::default(), output);
 
@@ -290,7 +290,7 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let tempo = quarter_note_tempo(composition.get_tempo());
 
     let stringify_list = |x: &[String]| if !x.is_empty() { x.join(", ") } else { "N/A".into() };
-    let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key:?}",
+    let notes = xml_escape(&format!("title: {title}\ncomposers: {composers}\nlyricists: {lyricists}\narrangers: {arrangers}\npublisher: {publisher}\ncopyright: {copyright}\n\ntempo: {tempo}\ntime signature: {time_signature}\nkey: {key_sig:?}{key_mode:?}",
         title = composition.get_title(),
         composers = stringify_list(composition.get_composers()),
         lyricists = stringify_list(composition.get_lyricists()),
@@ -298,7 +298,8 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
         publisher = stringify_list(composition.get_publisher().as_slice()),
         copyright = stringify_list(composition.get_copyright().as_slice()),
         time_signature = composition.get_starting_time_signature(),
-        key = composition.get_starting_key().signature,
+        key_sig = composition.get_starting_key().signature,
+        key_mode = composition.get_starting_key().mode,
     ));
 
     let mut res = String::new();
