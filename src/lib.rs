@@ -29,7 +29,7 @@ fn xml_escape(input: &str) -> String {
             _ => result.push(c),
         }
     }
-    result.into()
+    result
 }
 fn quarter_note_tempo(tempo: &Tempo) -> f64 {
     tempo.beats_per_minute as f64 * (tempo.base_note.value() / Duration::new(DurationType::Quarter, 0).value())
@@ -62,7 +62,7 @@ impl Modifiers {
         }
         check_invariants!();
 
-        while !self.active.is_subset(&new_active) {
+        while !self.active.is_subset(new_active) {
             for x in self.stack.pop().unwrap() {
                 self.active.remove(&x);
             }
@@ -182,7 +182,7 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
         match content {
             PhraseContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
             PhraseContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
-            PhraseContent::Phrase(sub_phrase) => translate_phrase(&*sub_phrase, output, context)?,
+            PhraseContent::Phrase(sub_phrase) => translate_phrase(sub_phrase, output, context)?,
             PhraseContent::MultiVoice(_) => (),
         }
     }
@@ -203,7 +203,7 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
         match content {
             StaffContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
             StaffContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
-            StaffContent::Phrase(phrase) => translate_phrase(&*phrase, output, context)?,
+            StaffContent::Phrase(phrase) => translate_phrase(phrase, output, context)?,
             StaffContent::Direction(direction) => match &direction.r#type {
                 DirectionType::KeyChange { key } => write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = key.signature, key_mode = key.mode).unwrap(),
                 _ => (),
