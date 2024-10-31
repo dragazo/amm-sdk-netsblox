@@ -10,6 +10,8 @@ use alloc::vec::Vec;
 use alloc::collections::BTreeSet;
 use alloc::string::String;
 
+pub use amm; // re-export for lib users
+
 use amm::Composition;
 use amm::note::{Note, DurationType, Duration, Accidental};
 use amm::context::{Dynamic, Key, Tempo};
