@@ -4,6 +4,6 @@ fn main() {
         panic!("usage: {} [input path]", args[0]);
     }
     let input = std::fs::read(&args[1]).unwrap();
-    let composition = amm::Storage::AMM.load_data(&input).unwrap();
+    let composition = amm::storage::Storage::AMM.load_data(&input).unwrap();
     println!("{}", amm_sdk_netsblox::translate(&composition).unwrap());
 }

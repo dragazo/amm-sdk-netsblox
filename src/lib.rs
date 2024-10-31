@@ -10,11 +10,11 @@ use alloc::vec::Vec;
 use alloc::collections::BTreeSet;
 use alloc::string::String;
 
-use amm::{
-    Composition, Part, Section, Staff, Note, PartContent, SectionContent, StaffContent, ChordContent, DurationType, SectionModificationType,
-    NoteModificationType, Dynamic, Phrase, PhraseContent, PhraseModificationType, Key, Duration, DirectionType, Accidental,
-    Tempo,
-};
+use amm::Composition;
+use amm::note::{Note, DurationType, Duration, Accidental};
+use amm::context::{Dynamic, Key, Tempo};
+use amm::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType};
+use amm::structure::{Part, Section, Staff, PartContent, SectionContent, StaffContent, ChordContent, Phrase, PhraseContent};
 
 fn xml_escape(input: &str) -> String {
     let mut result = String::with_capacity(input.len());
