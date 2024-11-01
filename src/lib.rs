@@ -98,14 +98,17 @@ struct Context {
 
 fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
-        let value = match duration.value {
-            DurationType::Whole => "Whole",
-            DurationType::Half => "Half",
-            DurationType::Quarter => "Quarter",
-            DurationType::Eighth => "Eighth",
-            DurationType::Sixteenth => "Sixteenth",
-            DurationType::ThirtySecond => "ThirtySecond",
-            DurationType::SixtyFourth => "SixtyFourth",
+        let (value, reps) = match duration.value {
+            DurationType::Maxima => ("Whole", 8),
+            DurationType::Long => ("Whole", 4),
+            DurationType::Breve => ("Whole", 2),
+            DurationType::Whole => ("Whole", 1),
+            DurationType::Half => ("Half", 1),
+            DurationType::Quarter => ("Quarter", 1),
+            DurationType::Eighth => ("Eighth", 1),
+            DurationType::Sixteenth => ("Sixteenth", 1),
+            DurationType::ThirtySecond => ("ThirtySecond", 1),
+            DurationType::SixtyFourth => ("SixtyFourth", 1),
             _ => return Err(TranslateError::UnsupportedDuration { duration }),
         };
         let dots = match duration.dots {
@@ -114,7 +117,18 @@ fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Contex
             2 => "DottedDotted",
             _ => return Err(TranslateError::UnsupportedDuration { duration }),
         };
-        Ok(format!("<l>{dots}{value}</l>"))
+
+        Ok(match reps {
+            1 => format!("<l>{dots}{value}</l>"),
+            _ => {
+                let mut res = String::from(r#"<block s="tieDuration"><list>"#);
+                for _ in 0..reps {
+                    write!(res, r#"<l>{dots}{value}</l>"#).unwrap();
+                }
+                res += "</list></block>";
+                res
+            }
+        })
     }
 
     let (notes, shortest_duration) = match raw_notes.iter().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {

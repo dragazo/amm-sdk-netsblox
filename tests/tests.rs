@@ -16,6 +16,9 @@ fn test_notes() {
         let section = part.add_section("sec0");
         let staff = section.add_staff("staff0");
 
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 0), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 0), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 0), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 0), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 0), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 0), None);
@@ -24,6 +27,9 @@ fn test_notes() {
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 0), None);
         staff.add_note(Pitch::new(PitchName::E, 1), Duration::new(DurationType::SixtyFourth, 0), None);
 
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 1), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 1), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 1), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 1), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 1), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 1), None);
@@ -32,6 +38,9 @@ fn test_notes() {
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 1), None);
         staff.add_note(Pitch::new(PitchName::E, 1), Duration::new(DurationType::SixtyFourth, 1), None);
 
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 2), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 2), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 2), None);
         staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 2), None);
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 2), None);
         staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 2), None);
@@ -275,6 +284,9 @@ fn test_rests() {
         let section = part.add_section("sec0");
         let staff = section.add_staff("staff0");
 
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Maxima, 0), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Long, 0), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Breve, 0), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Whole, 0), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 0), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
@@ -283,6 +295,9 @@ fn test_rests() {
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::ThirtySecond, 0), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::SixtyFourth, 0), None);
 
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Maxima, 1), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Long, 1), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Breve, 1), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Whole, 1), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 1), None);
@@ -291,6 +306,9 @@ fn test_rests() {
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::ThirtySecond, 1), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::SixtyFourth, 1), None);
 
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Maxima, 2), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Long, 2), None);
+        staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Breve, 2), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Whole, 2), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 2), None);
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 2), None);
