@@ -96,41 +96,57 @@ struct Context {
     starting_key: Key,
 }
 
-fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
-    fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
-        let (value, reps) = match duration.value {
-            DurationType::Maxima => ("Whole", 8),
-            DurationType::Long => ("Whole", 4),
-            DurationType::Breve => ("Whole", 2),
-            DurationType::Whole => ("Whole", 1),
-            DurationType::Half => ("Half", 1),
-            DurationType::Quarter => ("Quarter", 1),
-            DurationType::Eighth => ("Eighth", 1),
-            DurationType::Sixteenth => ("Sixteenth", 1),
-            DurationType::ThirtySecond => ("ThirtySecond", 1),
-            DurationType::SixtyFourth => ("SixtyFourth", 1),
-            _ => return Err(TranslateError::UnsupportedDuration { duration }),
-        };
-        let dots = match duration.dots {
-            0 => "",
-            1 => "Dotted",
-            2 => "DottedDotted",
-            _ => return Err(TranslateError::UnsupportedDuration { duration }),
-        };
-
-        Ok(match reps {
-            1 => format!("<l>{dots}{value}</l>"),
-            _ => {
-                let mut res = String::from(r#"<block s="tieDuration"><list>"#);
-                for _ in 0..reps {
-                    write!(res, r#"<l>{dots}{value}</l>"#).unwrap();
-                }
-                res += "</list></block>";
-                res
-            }
-        })
+fn half_duration_type(duration_type: DurationType) -> Option<DurationType> {
+    match duration_type {
+        DurationType::Maxima => Some(DurationType::Long),
+        DurationType::Long => Some(DurationType::Breve),
+        DurationType::Breve => Some(DurationType::Whole),
+        DurationType::Whole => Some(DurationType::Half),
+        DurationType::Half => Some(DurationType::Quarter),
+        DurationType::Quarter => Some(DurationType::Eighth),
+        DurationType::Eighth => Some(DurationType::Sixteenth),
+        DurationType::Sixteenth => Some(DurationType::ThirtySecond),
+        DurationType::ThirtySecond => Some(DurationType::SixtyFourth),
+        DurationType::SixtyFourth => Some(DurationType::OneHundredTwentyEighth),
+        DurationType::OneHundredTwentyEighth => Some(DurationType::TwoHundredFiftySixth),
+        DurationType::TwoHundredFiftySixth => Some(DurationType::FiveHundredTwelfth),
+        DurationType::FiveHundredTwelfth => Some(DurationType::OneThousandTwentyFourth),
+        DurationType::OneThousandTwentyFourth => Some(DurationType::TwoThousandFortyEighth),
+        DurationType::TwoThousandFortyEighth => None,
     }
-
+}
+fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
+    let dots = match duration.dots {
+        0 => "",
+        1 => "Dotted",
+        2 => "DottedDotted",
+        x => {
+            let mut res = String::from(r#"<block s="tieDuration"><list>"#);
+            let mut t = duration.value;
+            for _ in 2..x {
+                res += &parse_duration(Duration::new(t, 0)).map_err(|_| TranslateError::UnsupportedDuration { duration })?;
+                t = half_duration_type(t).ok_or_else(|| TranslateError::UnsupportedDuration { duration })?;
+            }
+            res += &parse_duration(Duration::new(t, 2)).map_err(|_| TranslateError::UnsupportedDuration { duration })?;
+            res += "</list></block>";
+            return Ok(res);
+        }
+    };
+    Ok(match duration.value {
+        DurationType::Maxima => format!(r#"<block s="tieDuration"><list><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l></list></block>"#),
+        DurationType::Long => format!(r#"<block s="tieDuration"><list><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l><l>{dots}Whole</l></list></block>"#),
+        DurationType::Breve => format!(r#"<block s="tieDuration"><list><l>{dots}Whole</l><l>{dots}Whole</l></list></block>"#),
+        DurationType::Whole => format!("<l>{dots}Whole</l>"),
+        DurationType::Half => format!("<l>{dots}Half</l>"),
+        DurationType::Quarter => format!("<l>{dots}Quarter</l>"),
+        DurationType::Eighth => format!("<l>{dots}Eighth</l>"),
+        DurationType::Sixteenth => format!("<l>{dots}Sixteenth</l>"),
+        DurationType::ThirtySecond => format!("<l>{dots}ThirtySecond</l>"),
+        DurationType::SixtyFourth => format!("<l>{dots}SixtyFourth</l>"),
+        _ => return Err(TranslateError::UnsupportedDuration { duration }),
+    })
+}
+fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     let (notes, shortest_duration) = match raw_notes.iter().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
         Some(x) => (raw_notes.iter().filter(|x| !x.is_rest()), parse_duration(x)?),
         None => return Ok(()),

@@ -49,6 +49,60 @@ fn test_notes() {
         staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 2), None);
         staff.add_note(Pitch::new(PitchName::E, 1), Duration::new(DurationType::SixtyFourth, 2), None);
 
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 3), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 3), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 3), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 3), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 3), None);
+        staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 3), None);
+        staff.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Eighth, 3), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Sixteenth, 3), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::ThirtySecond, 3), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 4), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 4), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 4), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 4), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 4), None);
+        staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 4), None);
+        staff.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Eighth, 4), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Sixteenth, 4), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 5), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 5), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 5), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 5), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 5), None);
+        staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 5), None);
+        staff.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Eighth, 5), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 6), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 6), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 6), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 6), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 6), None);
+        staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 6), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 7), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 7), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 7), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 7), None);
+        staff.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Half, 7), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 8), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 8), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 8), None);
+        staff.add_note(Pitch::new(PitchName::D, 1), Duration::new(DurationType::Whole, 8), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 9), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 9), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Breve, 9), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 10), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Long, 10), None);
+
+        staff.add_note(Pitch::new(PitchName::G, 2), Duration::new(DurationType::Maxima, 11), None);
+
         composition
     };
 
