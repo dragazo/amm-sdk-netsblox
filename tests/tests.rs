@@ -1,7 +1,7 @@
-use amm::Composition;
-use amm::note::{DurationType, Duration, Accidental, Pitch, PitchName};
-use amm::context::{Dynamic, Key, Tempo, KeySignature, KeyMode, TimeSignature, TimeSignatureType, TempoSuggestion, TempoMarking};
-use amm::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType};
+use amm_sdk::Composition;
+use amm_sdk::note::{DurationType, Duration, Accidental, Pitch, PitchName};
+use amm_sdk::context::{Dynamic, Key, Tempo, KeySignature, KeyMode, TimeSignature, TimeSignatureType, TempoSuggestion, TempoMarking};
+use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType};
 
 use amm_sdk_netsblox::*;
 
