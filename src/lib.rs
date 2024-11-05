@@ -94,6 +94,7 @@ struct Context {
     staffs: BTreeSet<*const Staff>,
     phrases: BTreeSet<*const Phrase>,
     starting_key: Key,
+    starting_tempo: Tempo,
 }
 
 fn half_duration_type(duration_type: DurationType) -> Option<DurationType> {
@@ -302,7 +303,10 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 
     for (i, content) in part.iter().enumerate() {
         let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block><block s="setInstrument"><l>{instrument}</l></block><block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = context.starting_key.signature, key_mode = context.starting_key.mode).unwrap();
+        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block>"#).unwrap();
+        write!(output, r#"<block s="setInstrument"><l>{instrument}</l></block>"#).unwrap();
+        write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(&context.starting_tempo)).unwrap();
+        write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = context.starting_key.signature, key_mode = context.starting_key.mode).unwrap();
 
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
@@ -337,7 +341,7 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let mut res = String::new();
     write!(res, r#"<room name="{title}"><role name="myRole"><project name="myRole"><notes>{notes}</notes><stage name="Stage" width="480" height="360" costume="0" color="255,255,255,1" tempo="{tempo}" threadsafe="false" penlog="false" volume="100" pan="0" lines="round" ternary="false" hyperops="true" codify="false" inheritance="false" sublistIDs="false" scheduled="false"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><variables></variables><blocks></blocks><messageTypes><messageType><name>message</name><fields><field>msg</field></fields></messageType></messageTypes><scripts></scripts><sprites>"#).unwrap();
 
-    let mut context = Context { modifiers: Modifiers::default(), sections: BTreeSet::new(), phrases: BTreeSet::new(), staffs: BTreeSet::new(), starting_key: *composition.get_starting_key() };
+    let mut context = Context { modifiers: Modifiers::default(), sections: BTreeSet::new(), phrases: BTreeSet::new(), staffs: BTreeSet::new(), starting_key: *composition.get_starting_key(), starting_tempo: *composition.get_tempo() };
     for part in composition.iter() {
         translate_part(part, &mut res, &mut context)?;
     }
