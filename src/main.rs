@@ -20,9 +20,9 @@ fn main() {
     let content = std::fs::read(&args.path).unwrap();
 
     let composition = match args.path.rsplit('.').next().unwrap_or_default() {
-        "musicxml" => amm_sdk::storage::Storage::MusicXML.load_data(&content).unwrap(),
-        "mid" | "smf" => amm_sdk::storage::Storage::MIDI.load_data(&content).unwrap(),
-        _ => amm_sdk::storage::Storage::AMM.load_data(&content).unwrap(),
+        "musicxml" => amm_sdk::storage::Storage::MusicXML.load_data(content).unwrap(),
+        "mid" | "smf" => amm_sdk::storage::Storage::MIDI.load_data(content).unwrap(),
+        _ => amm_sdk::storage::Storage::AMM.load_data(content).unwrap(),
     };
 
     match args.composition {
