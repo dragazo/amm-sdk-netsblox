@@ -15,7 +15,7 @@ pub use amm_sdk; // re-export for lib users
 use amm_sdk::Composition;
 use amm_sdk::note::{Note, DurationType, Duration, Accidental};
 use amm_sdk::context::{Dynamic, Key, Tempo};
-use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType};
+use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType, NoteModification, ChordModificationType};
 use amm_sdk::structure::{Part, Section, Staff, PartContent, SectionContent, StaffContent, ChordContent, Phrase, PhraseContent};
 
 fn xml_escape(input: &str) -> String {
@@ -147,11 +147,12 @@ fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
         _ => return Err(TranslateError::UnsupportedDuration { duration }),
     })
 }
-fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
+fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
     let (notes, shortest_duration) = match raw_notes.iter().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
         Some(x) => (raw_notes.iter().filter(|x| !x.is_rest()), parse_duration(x)?),
         None => return Ok(()),
     };
+    let raw_mods = raw_mods.iter().flat_map(NoteModification::from_chord_modification).map(|x| x.r#type).collect::<Vec<_>>();
 
     if notes.clone().next().is_some() {
         let mut notes_xml = String::new();
@@ -174,14 +175,14 @@ fn translate_chord(raw_notes: &[Note], output: &mut String, context: &mut Contex
         }
         let durations_xml = if durations_xml.iter().all(|x| *x == durations_xml[0]) { durations_xml.into_iter().next().unwrap() } else { format!(r#"<block s="reportNewList"><list>{}</list></block>"#, durations_xml.join("")) };
 
-        let mods = notes.filter(|x| !x.is_rest()).flat_map(|n| n.iter_modifications().flat_map(|m| Some(match &m.r#type {
+        let mods = notes.flat_map(|n| n.iter_modifications().map(|x| &x.r#type)).chain(&raw_mods).flat_map(|m| Some(match &m {
             NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
             NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
             NoteModificationType::Dynamic { dynamic: Dynamic::Forte(_) | Dynamic::MezzoForte } => Mod::Forte,
             NoteModificationType::Dynamic { dynamic: Dynamic::Piano(_) | Dynamic::MezzoPiano } => Mod::Piano,
             NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
             _ => return None,
-        }))).collect();
+        })).collect();
         context.modifiers.set(&mods, output);
 
         write!(output, r#"<block s="playNotes">{durations_xml}<list>{notes_xml}</list></block>"#).unwrap();
@@ -213,8 +214,8 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
 
     for content in phrase.iter() {
         match content {
-            PhraseContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
-            PhraseContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
+            PhraseContent::Note(note) => translate_chord(&[note.clone()], &[], output, context)?,
+            PhraseContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), &chord.iter_modifications().map(|x| x.r#type).collect::<Vec<_>>(), output, context)?,
             PhraseContent::Phrase(sub_phrase) => translate_phrase(sub_phrase, output, context)?,
             PhraseContent::MultiVoice(_) => (),
         }
@@ -234,8 +235,8 @@ fn translate_staff(staff: &Staff, output: &mut String, context: &mut Context) ->
 
     for content in staff.iter() {
         match content {
-            StaffContent::Note(note) => translate_chord(&[note.clone()], output, context)?,
-            StaffContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), output, context)?,
+            StaffContent::Note(note) => translate_chord(&[note.clone()], &[], output, context)?,
+            StaffContent::Chord(chord) => translate_chord(&chord.iter().map(|x| match x { ChordContent::Note(note) => note.clone() }).collect::<Vec<_>>(), &chord.iter_modifications().map(|x| x.r#type).collect::<Vec<_>>(), output, context)?,
             StaffContent::Phrase(phrase) => translate_phrase(phrase, output, context)?,
             StaffContent::Direction(direction) => match &direction.r#type {
                 DirectionType::KeyChange { key } => write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = key.signature, key_mode = key.mode).unwrap(),

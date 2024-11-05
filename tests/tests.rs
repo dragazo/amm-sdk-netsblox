@@ -1,7 +1,7 @@
 use amm_sdk::Composition;
 use amm_sdk::note::{DurationType, Duration, Accidental, Pitch, PitchName};
 use amm_sdk::context::{Dynamic, Key, Tempo, KeySignature, KeyMode, TimeSignature, TimeSignatureType, TempoSuggestion, TempoMarking};
-use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType};
+use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType, ChordModificationType};
 
 use amm_sdk_netsblox::*;
 
@@ -241,6 +241,84 @@ fn test_note_mods() {
 
     let trans = translate(&composition).unwrap();
     if trans != include_str!("projects/note-mods.xml") {
+        panic!("{trans}");
+    }
+}
+
+#[test]
+fn test_chord_mods() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("Electronical Guitars");
+        let section = part.add_section("sec0");
+        let staff = section.add_staff("staff0");
+
+        let _ = staff.add_chord();
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::B, 2), Duration::new(DurationType::Eighth, 2), None);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::B, 2), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Half, 1), None);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_modification(ChordModificationType::Accent);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::E, 2), Duration::new(DurationType::Eighth, 0), None);
+        chord.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Sixteenth, 1), None);
+        chord.add_modification(ChordModificationType::Accent);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::B, 2), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Whole, 0), None);
+        chord.add_modification(ChordModificationType::Staccato);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::A, 2), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 2), None);
+        chord.add_modification(ChordModificationType::Accent);
+        chord.add_modification(ChordModificationType::Staccato);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
+        chord.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Half, 0), None);
+        chord.add_modification(ChordModificationType::Staccato);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Half, 0), None);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new(PitchName::F, 5), Duration::new(DurationType::Half, 0), None);
+        chord.add_modification(ChordModificationType::Accent);
+        chord.add_modification(ChordModificationType::Staccato);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 2), None);
+
+        let chord = staff.add_chord();
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 0), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Half, 1), None);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 2), None);
+        chord.add_modification(ChordModificationType::Accent);
+        chord.add_modification(ChordModificationType::Marcato);
+
+        composition
+    };
+
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/chord-mods.xml") {
         panic!("{trans}");
     }
 }
