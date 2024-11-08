@@ -12,6 +12,7 @@
         "Staccatissimo",
         "sublist",
         "threadsafe",
-        "Tuplet"
+        "Tuplet",
+        "tuplets"
     ]
 }

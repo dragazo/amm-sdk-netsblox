@@ -199,9 +199,12 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
 
     let mut tuplet_mod = None;
     for modification in phrase.iter_modifications() {
-        match &modification.r#type {
-            &PhraseModificationType::Tuplet { num_beats, into_beats } => match (num_beats, into_beats) {
-                (3, 2) => tuplet_mod = Some("Triplet"),
+        match modification.r#type {
+            PhraseModificationType::Tuplet { num_beats, into_beats } => match (num_beats, into_beats) {
+                (3, 2) => tuplet_mod = Some("Tuplet 3:2"),
+                (5, 4) => tuplet_mod = Some("Tuplet 5:4"),
+                (6, 4) => tuplet_mod = Some("Tuplet 6:4"),
+                (7, 4) => tuplet_mod = Some("Tuplet 7:4"),
                 _ => return Err(TranslateError::UnsupportedTuplet { num_beats, into_beats }),
             }
             _ => (),

@@ -324,7 +324,7 @@ fn test_chord_mods() {
 }
 
 #[test]
-fn test_triplets() {
+fn test_tuplets() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
         composition.add_arranger("Glob Simpson");
@@ -356,11 +356,29 @@ fn test_triplets() {
         phrase.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Quarter, 0), None);
         phrase.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
 
+        let phrase = staff.add_phrase();
+        phrase.add_modification(PhraseModificationType::Tuplet { num_beats: 5, into_beats: 4 });
+        phrase.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::G, 1), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::B, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        let phrase = staff.add_phrase();
+        phrase.add_modification(PhraseModificationType::Tuplet { num_beats: 6, into_beats: 4 });
+        phrase.add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::B, 5), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Quarter, 0), None);
+
+        let phrase = staff.add_phrase();
+        phrase.add_modification(PhraseModificationType::Tuplet { num_beats: 7, into_beats: 4 });
+        phrase.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::A, 1), Duration::new(DurationType::Quarter, 0), None);
+        phrase.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
+
         composition
     };
 
     let trans = translate(&composition).unwrap();
-    if trans != include_str!("projects/triplets.xml") {
+    if trans != include_str!("projects/tuplets.xml") {
         panic!("{trans}");
     }
 }
