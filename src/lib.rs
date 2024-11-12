@@ -148,8 +148,11 @@ fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
     })
 }
 fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
-    let (notes, shortest_duration) = match raw_notes.iter().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
-        Some(x) => (raw_notes.iter().filter(|x| !x.is_rest()), parse_duration(x)?),
+    // in the future, beatblox will support grace notes - but for now, just ignore them
+    let raw_notes = raw_notes.iter().filter(|x| !x.iter_modifications().any(|m| matches!(m.r#type, NoteModificationType::Grace { .. })));
+
+    let (notes, shortest_duration) = match raw_notes.clone().map(|x| x.duration).reduce(|a, b| if a.value() <= b.value() { a } else { b }) {
+        Some(x) => (raw_notes.filter(|x| !x.is_rest()), parse_duration(x)?),
         None => return Ok(()),
     };
     let raw_mods = raw_mods.iter().flat_map(NoteModification::from_chord_modification).map(|x| x.r#type).collect::<Vec<_>>();
