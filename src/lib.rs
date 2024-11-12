@@ -53,16 +53,18 @@ struct Modifiers {
     stack: Vec<Vec<Mod>>,
     active: BTreeSet<Mod>,
 }
+
+macro_rules! check_modifiers_invariants {
+    ($self:ident) => {{
+        debug_assert!($self.stack.iter().all(|x| !x.is_empty()));
+        debug_assert!($self.stack.iter().map(|x| x.len()).sum::<usize>() == $self.active.len());
+        debug_assert!($self.stack.iter().flat_map(|x| x.iter().copied()).collect::<BTreeSet<_>>() == $self.active);
+    }};
+}
+
 impl Modifiers {
     fn set(&mut self, new_active: &BTreeSet<Mod>, output: &mut String) {
-        macro_rules! check_invariants {
-            () => {{
-                debug_assert!(self.stack.iter().all(|x| !x.is_empty()));
-                debug_assert!(self.stack.iter().map(|x| x.len()).sum::<usize>() == self.active.len());
-                debug_assert!(self.stack.iter().flat_map(|x| x.iter().copied()).collect::<BTreeSet<_>>() == self.active);
-            }};
-        }
-        check_invariants!();
+        check_modifiers_invariants!(self);
 
         while !self.active.is_subset(new_active) {
             for x in self.stack.pop().unwrap() {
@@ -84,7 +86,22 @@ impl Modifiers {
             self.stack.push(new);
         }
 
-        check_invariants!();
+        check_modifiers_invariants!(self);
+    }
+    fn unwind_point(&self) -> usize {
+        self.stack.len()
+    }
+    fn unwind_to(&mut self, point: usize, output: &mut String) {
+        check_modifiers_invariants!(self);
+
+        while self.stack.len() > point {
+            for x in self.stack.pop().unwrap() {
+                self.active.remove(&x);
+            }
+            write!(output, r#"</script></block>"#).unwrap();
+        }
+
+        check_modifiers_invariants!(self);
     }
 }
 
@@ -214,6 +231,7 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
         }
     }
 
+    let unwind_point = context.modifiers.unwind_point();
     if let Some(tuplet_mod) = tuplet_mod {
         write!(output, r#"<block s="noteMod"><list><l><option>{tuplet_mod}</option></l></list><script>"#).unwrap();
     }
@@ -229,6 +247,7 @@ fn translate_phrase(phrase: &Phrase, output: &mut String, context: &mut Context)
 
     if tuplet_mod.is_some() {
         write!(output, r#"</script></block>"#).unwrap();
+        context.modifiers.unwind_to(unwind_point, output);
     }
 
     assert!(context.phrases.remove(&(phrase as *const _)));

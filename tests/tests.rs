@@ -426,6 +426,77 @@ fn test_repeat() {
 }
 
 #[test]
+fn test_mods_stack_1() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let staff = section.add_staff("staff1");
+
+        for _ in 0..4 {
+            let phrase = staff.add_phrase();
+            phrase.add_modification(PhraseModificationType::Tuplet { num_beats: 6, into_beats: 4 });
+            phrase.add_note(Pitch::new_rest(), Duration::new(DurationType::Sixteenth, 0), None);
+            let note = phrase.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            note.add_modification(NoteModificationType::Accent);
+            let note = phrase.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+        }
+
+        composition
+    };
+
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/mods-stack-1.xml") {
+        panic!("{trans}");
+    }
+}
+
+#[test]
+fn test_mods_stack_2() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("part0");
+        let section = part.add_section("sec0");
+        let staff = section.add_staff("staff1");
+
+        let note = staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.add_modification(NoteModificationType::Staccato);
+
+        for _ in 0..4 {
+            let phrase = staff.add_phrase();
+            phrase.add_modification(PhraseModificationType::Tuplet { num_beats: 6, into_beats: 4 });
+            phrase.add_note(Pitch::new_rest(), Duration::new(DurationType::Sixteenth, 0), None);
+            let note = phrase.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            note.add_modification(NoteModificationType::Accent);
+            let note = phrase.add_note(Pitch::new(PitchName::D, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+            let note = phrase.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Sixteenth, 0), None);
+            note.add_modification(NoteModificationType::Staccato);
+        }
+
+        composition
+    };
+
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/mods-stack-2.xml") {
+        panic!("{trans}");
+    }
+}
+
+#[test]
 fn test_rests() {
     let composition = {
         let mut composition = Composition::new("some title", None, None, None);
