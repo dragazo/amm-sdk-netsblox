@@ -9,5 +9,5 @@ documentation = "https://docs.rs/amm-sdk-netsblox"
 description = "Converts amm_sdk compositions into NetsBlox projects"
 
 [dependencies]
-amm_sdk = "0.3.9"
+amm_sdk = "0.3.10"
 clap = { version = "4.5.20", features = ["derive"] }

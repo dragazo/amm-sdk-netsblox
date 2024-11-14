@@ -190,15 +190,15 @@ fn test_note_mods() {
         let _ = staff.add_note(Pitch::new(PitchName::C, 4), Duration::new(DurationType::Quarter, 0), None);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Quarter, 0), None);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Staccato);
 
         let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
 
         let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        note.add_modification(NoteModificationType::Staccato);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        note.add_modification(NoteModificationType::Staccato);
 
         let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
 
@@ -211,30 +211,30 @@ fn test_note_mods() {
         let _ = staff.add_note(Pitch::new(PitchName::C, 3), Duration::new(DurationType::Quarter, 0), None);
 
         let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
         note.add_modification(NoteModificationType::Accent);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
         note.add_modification(NoteModificationType::Accent);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
 
         let note = staff.add_note(Pitch::new(PitchName::D, 3), Duration::new(DurationType::Quarter, 0), None);
         note.add_modification(NoteModificationType::Accent);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
         note.add_modification(NoteModificationType::Staccato);
 
         let note = staff.add_note(Pitch::new(PitchName::E, 3), Duration::new(DurationType::Quarter, 0), None);
         note.add_modification(NoteModificationType::Staccato);
         note.add_modification(NoteModificationType::Accent);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
 
         let note = staff.add_note(Pitch::new(PitchName::C, 2), Duration::new(DurationType::Quarter, 0), None);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
         note.add_modification(NoteModificationType::Accent);
 
         let note = staff.add_note(Pitch::new(PitchName::G, 4), Duration::new(DurationType::Quarter, 0), None);
         note.add_modification(NoteModificationType::Accent);
-        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Piano(0) });
+        note.add_modification(NoteModificationType::Turn { upper: true, delayed: false, vertical: false });
 
         composition
     };
@@ -541,37 +541,37 @@ fn test_rests() {
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
-        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Accent);
 
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
-        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
-        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Accent);
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None).add_modification(NoteModificationType::Accent);
 
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
         chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None);
-        chord.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Accent);
 
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
         chord.add_note(Pitch::new(PitchName::A, 2), Duration::new(DurationType::Eighth, 0), None);
         chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Eighth, 0), None);
-        chord.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Eighth, 0), None).add_modification(NoteModificationType::Accent);
 
         staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
 
         let chord = staff.add_chord();
         chord.add_note(Pitch::new(PitchName::B, 4), Duration::new(DurationType::Sixteenth, 0), None);
-        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Sixteenth, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::Sixteenth, 0), None).add_modification(NoteModificationType::Accent);
         chord.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Sixteenth, 0), None);
 
         let chord = staff.add_chord();
         chord.add_note(Pitch::new(PitchName::B, 4), Duration::new(DurationType::Sixteenth, 0), None);
-        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::ThirtySecond, 0), None).add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(0) });
+        chord.add_note(Pitch::new_rest(), Duration::new(DurationType::ThirtySecond, 0), None).add_modification(NoteModificationType::Accent);
         chord.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Sixteenth, 0), None);
 
         composition

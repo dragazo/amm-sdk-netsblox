@@ -46,7 +46,7 @@ pub enum TranslateError {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Mod {
-    Piano, Forte, Accent, Staccato, TurnUpper, TurnLower,
+    Accent, Staccato, TurnUpper, TurnLower,
 }
 #[derive(Default)]
 struct Modifiers {
@@ -165,6 +165,15 @@ fn parse_duration(duration: Duration) -> Result<String, TranslateError> {
     })
 }
 fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], output: &mut String, context: &mut Context) -> Result<(), TranslateError> {
+    let raw_mods = raw_mods.iter().flat_map(NoteModification::from_chord_modification).map(|x| x.r#type).collect::<Vec<_>>();
+
+    for m in raw_notes.iter().flat_map(|n| n.iter_modifications()).map(|m| &m.r#type).chain(&raw_mods) {
+        match m {
+            NoteModificationType::Dynamic { dynamic } => write!(output, r#"<block s="setAudioEffect"><l>Volume</l><l>{}</l></block>"#, dynamic.value()).unwrap(),
+            _ => (),
+        }
+    }
+
     // in the future, beatblox will support grace notes - but for now, just ignore them
     let raw_notes = raw_notes.iter().filter(|x| !x.iter_modifications().any(|m| matches!(m.r#type, NoteModificationType::Grace { .. })));
 
@@ -172,7 +181,6 @@ fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], outpu
         Some(x) => (raw_notes.filter(|x| !x.is_rest()), parse_duration(x)?),
         None => return Ok(()),
     };
-    let raw_mods = raw_mods.iter().flat_map(NoteModification::from_chord_modification).map(|x| x.r#type).collect::<Vec<_>>();
 
     if notes.clone().next().is_some() {
         let mut notes_xml = String::new();
@@ -198,8 +206,6 @@ fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], outpu
         let mods = notes.flat_map(|n| n.iter_modifications().map(|x| &x.r#type)).chain(&raw_mods).flat_map(|m| Some(match &m {
             NoteModificationType::Accent | NoteModificationType::SoftAccent => Mod::Accent,
             NoteModificationType::Staccato | NoteModificationType::Staccatissimo => Mod::Staccato,
-            NoteModificationType::Dynamic { dynamic: Dynamic::Forte(_) | Dynamic::MezzoForte } => Mod::Forte,
-            NoteModificationType::Dynamic { dynamic: Dynamic::Piano(_) | Dynamic::MezzoPiano } => Mod::Piano,
             NoteModificationType::Turn { upper, delayed: _, vertical: _ } => if *upper { Mod::TurnUpper } else { Mod::TurnLower },
             _ => return None,
         })).collect();
