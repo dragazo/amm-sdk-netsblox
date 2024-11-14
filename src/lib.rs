@@ -14,7 +14,7 @@ pub use amm_sdk; // re-export for lib users
 
 use amm_sdk::Composition;
 use amm_sdk::note::{Note, DurationType, Duration, Accidental};
-use amm_sdk::context::{Dynamic, Key, Tempo};
+use amm_sdk::context::{Key, Tempo};
 use amm_sdk::modification::{PhraseModificationType, NoteModificationType, SectionModificationType, DirectionType, NoteModification, ChordModificationType};
 use amm_sdk::structure::{Part, Section, Staff, PartContent, SectionContent, StaffContent, ChordContent, Phrase, PhraseContent};
 

@@ -246,6 +246,42 @@ fn test_note_mods() {
 }
 
 #[test]
+fn test_dynamics() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("Electronical Guitars");
+        let section = part.add_section("sec0");
+        let staff = section.add_staff("staff0");
+
+        let _ = staff.add_note(Pitch::new(PitchName::F, 3), Duration::new(DurationType::Quarter, 0), None);
+
+        let note = staff.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::MezzoForte });
+
+        let _ = staff.add_note(Pitch::new(PitchName::F, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        let note = staff.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Quarter, 0), None);
+        note.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::Forte(2) });
+
+        let _ = staff.add_note(Pitch::new(PitchName::F, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        let rest = staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
+        rest.add_modification(NoteModificationType::Dynamic { dynamic: Dynamic::MezzoPiano });
+
+        let _ = staff.add_note(Pitch::new_rest(), Duration::new(DurationType::Quarter, 0), None);
+
+        let _ = staff.add_note(Pitch::new(PitchName::F, 2), Duration::new(DurationType::Quarter, 0), None);
+
+        composition
+    };
+
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/dynamics.xml") {
+        panic!("{trans}");
+    }
+}
+
+#[test]
 fn test_chord_mods() {
     let composition = {
         let mut composition = Composition::new("untitled", None, None, None);
