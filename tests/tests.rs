@@ -722,3 +722,39 @@ fn test_tempo() {
         panic!("{trans}");
     }
 }
+
+#[test]
+fn test_section_blocks() {
+    let composition = {
+        let mut composition = Composition::new("untitled", None, None, None);
+        let part = composition.add_part("Electronical Guitars");
+
+        let section = part.add_section("sec0");
+        let staff = section.add_staff("staff0");
+
+        staff.add_note(Pitch::new(PitchName::F, 2), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::A, 4), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::G, 3), Duration::new(DurationType::Eighth, 2), None);
+
+        let section = part.add_section("sec1");
+        let staff = section.add_staff("staff0");
+
+        staff.add_note(Pitch::new(PitchName::A, 3), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::D, 2), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::F, 4), Duration::new(DurationType::Eighth, 2), None);
+
+        let section = part.add_section("sec2");
+        let staff = section.add_staff("staff0");
+
+        staff.add_note(Pitch::new(PitchName::E, 4), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::B, 3), Duration::new(DurationType::Eighth, 2), None);
+        staff.add_note(Pitch::new(PitchName::A, 2), Duration::new(DurationType::Eighth, 2), None);
+
+        composition
+    };
+
+    let trans = translate(&composition).unwrap();
+    if trans != include_str!("projects/section-blocks.xml") {
+        panic!("{trans}");
+    }
+}

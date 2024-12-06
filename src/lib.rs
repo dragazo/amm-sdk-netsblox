@@ -5,9 +5,10 @@
 extern crate alloc;
 
 use core::fmt::Write as _;
+use core::iter;
 
 use alloc::vec::Vec;
-use alloc::collections::BTreeSet;
+use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::String;
 
 pub use amm_sdk; // re-export for lib users
@@ -112,6 +113,7 @@ struct Context {
     phrases: BTreeSet<*const Phrase>,
     starting_key: Key,
     starting_tempo: Tempo,
+    blocks: BTreeMap<String, String>,
 }
 
 fn half_duration_type(duration_type: DurationType) -> Option<DurationType> {
@@ -169,7 +171,7 @@ fn translate_chord(raw_notes: &[Note], raw_mods: &[ChordModificationType], outpu
 
     for m in raw_notes.iter().flat_map(|n| n.iter_modifications()).map(|m| &m.r#type).chain(&raw_mods) {
         match m {
-            NoteModificationType::Dynamic { dynamic } => write!(output, r#"<block s="setAudioEffect"><l>Volume</l><l>{}</l></block>"#, dynamic.value()).unwrap(),
+            NoteModificationType::Dynamic { dynamic } => write!(output, r#"<block s="setAudioEffect"><l>Volume</l><l>{}</l></block>"#, 100.0 * dynamic.value()).unwrap(),
             _ => (),
         }
     }
@@ -333,23 +335,27 @@ fn translate_part(part: &Part, output: &mut String, context: &mut Context) -> Re
 
     write!(output, r#"<sprite name="{name}" x="0" y="0" heading="90" scale="1" volume="100" pan="0" rotation="1" draggable="true" costume="0" color="80,80,80,1" pen="tip"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><blocks></blocks><variables></variables><scripts>"#).unwrap();
 
-    for (i, content) in part.iter().enumerate() {
-        let (x, y) = (i as f64 * 300.0, 0.0);
-        write!(output, r#"<script x="{x}" y="{y}"><block s="receiveGo"></block>"#).unwrap();
-        write!(output, r#"<block s="setInstrument"><l>{instrument}</l></block>"#).unwrap();
-        write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(&context.starting_tempo)).unwrap();
-        write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = context.starting_key.signature, key_mode = context.starting_key.mode).unwrap();
+    write!(output, r#"<script x="0" y="0"><block s="receiveGo"></block>"#).unwrap();
+    write!(output, r#"<block s="setInstrument"><l>{instrument}</l></block>"#).unwrap();
+    write!(output, r#"<block s="setBPM"><l>{tempo}</l></block>"#, tempo = quarter_note_tempo(&context.starting_tempo)).unwrap();
+    write!(output, r#"<block s="setKey"><l>{key_sig:?}{key_mode:?}</l></block>"#, key_sig = context.starting_key.signature, key_mode = context.starting_key.mode).unwrap();
 
+    for content in part.iter() {
         debug_assert!(context.modifiers.stack.is_empty() && context.modifiers.active.is_empty());
         match content {
-            PartContent::Section(section) => translate_section(section, output, context)?,
+            PartContent::Section(section) => {
+                let block_name = iter::once(String::new()).chain((2usize..).map(|x| format!(" {x}"))).map(|x| format!("{}{x}", section.get_name())).find(|x| !context.blocks.contains_key(x)).unwrap();
+                let mut block_def = format!(r#"<block-definition s={block_name:?} type="command" category="music"><inputs></inputs><script>"#);
+                translate_section(section, &mut block_def, context)?;
+                context.modifiers.set(&Default::default(), &mut block_def);
+                write!(block_def, "</script></block-definition>").unwrap();
+                write!(output, r#"<custom-block s={block_name:?}></custom-block>"#).unwrap();
+                context.blocks.insert(block_name, block_def);
+            }
         }
-        context.modifiers.set(&Default::default(), output);
-
-        write!(output, r#"</script>"#).unwrap();
     }
 
-    write!(output, r#"</scripts></sprite>"#).unwrap();
+    write!(output, r#"</script></scripts></sprite>"#).unwrap();
     Ok(())
 }
 pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
@@ -373,12 +379,24 @@ pub fn translate(composition: &Composition) -> Result<String, TranslateError> {
     let mut res = String::new();
     write!(res, r#"<room name="{title}"><role name="myRole"><project name="myRole"><notes>{notes}</notes><stage name="Stage" width="480" height="360" costume="0" color="255,255,255,1" tempo="{tempo}" threadsafe="false" penlog="false" volume="100" pan="0" lines="round" ternary="false" hyperops="true" codify="false" inheritance="false" sublistIDs="false" scheduled="false"><costumes><list struct="atomic"></list></costumes><sounds><list struct="atomic"></list></sounds><variables></variables><blocks></blocks><messageTypes><messageType><name>message</name><fields><field>msg</field></fields></messageType></messageTypes><scripts></scripts><sprites>"#).unwrap();
 
-    let mut context = Context { modifiers: Modifiers::default(), sections: BTreeSet::new(), phrases: BTreeSet::new(), staffs: BTreeSet::new(), starting_key: *composition.get_starting_key(), starting_tempo: *composition.get_tempo() };
+    let mut context = Context {
+        modifiers: <_>::default(),
+        sections: <_>::default(),
+        phrases: <_>::default(),
+        staffs: <_>::default(),
+        starting_key: *composition.get_starting_key(),
+        starting_tempo: *composition.get_tempo(),
+        blocks: <_>::default(),
+    };
     for part in composition.iter() {
         translate_part(part, &mut res, &mut context)?;
     }
 
-    write!(res, r#"</sprites></stage><blocks></blocks><variables></variables></project><media name="myRole"></media></role></room>"#).unwrap();
+    write!(res, r#"</sprites></stage><blocks>"#).unwrap();
+    for block_def in context.blocks.values() {
+        res += block_def.as_str();
+    }
+    write!(res, r#"</blocks><variables></variables></project><media name="myRole"></media></role></room>"#).unwrap();
 
     Ok(res)
 }
